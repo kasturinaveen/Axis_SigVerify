@@ -3,7 +3,7 @@ import keras
 import numpy as np
 from preprocess_image import preprocess_image
 from keras.preprocessing import image as prep_image
-
+import numpy as np
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
@@ -47,18 +47,30 @@ class DataGenerator(keras.utils.Sequence):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         image_pairs = []
         label_pairs = []
+        X1 = np.empty((self.batch_size, *self.dim))
+        X2 = np.empty((self.batch_size, *self.dim))
+        y = np.empty((self.batch_size), dtype=int)
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
-            img1_code, img2_code, label=  self.labels[self.labels['ID']==ID][['names', 'names_2', 'Label']]
-            img1 = preprocess_image(glob.glob(self.path + "NISDCC-" + img1_code + "_6g.PNG")[0])
-            # print(img1)
+            data =  self.labels[self.labels['ID']==ID]
+            img1_code = data['names']
+            img2_code = data['names_2']
+            label = data['Label']
+            #print(img1_code)
+            img1 = preprocess_image((self.path + "NISDCC-" + img1_code + "_6g.PNG").values[0])
+            #print(img1)
 
             img1 = prep_image.img_to_array(img1)  # , dim_ordering='tf')
 
-            img2 = preprocess_image(glob.glob(self.path + "NISDCC-" + img2_code + "_6g.PNG")[0])
+            img2 = preprocess_image((self.path + "NISDCC-" + img2_code + "_6g.PNG").values[0])
 
             img2 = prep_image.img_to_array(img2)  # , dim_ordering='tf')
             image_pairs += [[img1, img2]]
             label_pairs += [int(label)]
+            X1[i,] = img1
+            X2[i,] = img2
 
-        return image_pairs, label_pairs
+            # Store class
+            y[i] = int(label)
+
+        return [X1,X2] , y
