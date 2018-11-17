@@ -157,7 +157,7 @@ if __name__ == '__main__':
     # model.load_weights(fname)
     # print('Loading Best Weights')
     # tr_pred = model.evaluate_generator(generator=training_generator)
-    # print("loss is " +str(tr_pred[0)+" Accuracy is "+str(tr_pred[1]))
+    # print("loss is " +str(tr_pred[0])+" Accuracy is "+str(tr_pred[1]))
     # #tr_pred = model.predict_generator(generator=validation_generator)
     # # print(tr_pred)
     # with open('result.txt', 'w') as f:
