@@ -146,19 +146,20 @@ if __name__ == '__main__':
     model = Model(input=[input_a, input_b], output=distance)
     rms = RMSprop(lr=1e-4, rho=0.9, epsilon=1e-08)
     adadelta = Adadelta()
-    model.compile(loss=contrastive_loss, optimizer=rms)
+    model.compile(loss=contrastive_loss, optimizer=rms, metrics=['accuracy'])
     fname = os.path.join('D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g', 'weights_NISDCC.hdf5')
     checkpointer = ModelCheckpoint(filepath=fname, verbose=1, save_best_only=True)
-    # history = model.fit_generator(generator=training_generator,
-    #                     validation_data=validation_generator,
-    #                     use_multiprocessing=True,
-    #                     workers=6,  callbacks=[checkpointer], epochs=5 )
-    # print(history.history)
-    model.load_weights(fname)
-    print('Loading Best Weights')
-
-    tr_pred = model.predict_generator(generator=validation_generator)
-    # print(tr_pred)
-    with open('result.txt', 'w') as f:
-        f.write(str(tr_pred))
-        f.close()
+    history = model.fit_generator(generator=training_generator,
+                        validation_data=validation_generator,
+                        use_multiprocessing=True,
+                        workers=6,  callbacks=[checkpointer], epochs=15 )
+    print(history.history)
+    # model.load_weights(fname)
+    # print('Loading Best Weights')
+    # tr_pred = model.evaluate_generator(generator=training_generator)
+    # print("loss is " +str(tr_pred[0)+" Accuracy is "+str(tr_pred[1]))
+    # #tr_pred = model.predict_generator(generator=validation_generator)
+    # # print(tr_pred)
+    # with open('result.txt', 'w') as f:
+    #     f.write(str(tr_pred))
+    #     f.close()
