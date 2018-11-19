@@ -17,6 +17,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing import image as prep_image
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score
 
 #from keras.backend.tensorflow_backend import set_session
 from keras import backend as K
@@ -54,46 +55,48 @@ def eucl_dist_output_shape(shapes):
 
 
 def create_base_network_signet(input_shape):
-    model = Sequential()
-    model.add(Conv2D(32, (5, 13), activation="relu", input_shape=input_shape))
-    model.add(MaxPooling2D(pool_size=(2, 3)))
-    model.add(Conv2D(64, (3, 7), activation="relu", input_shape=input_shape))
-    model.add(MaxPooling2D(pool_size=(2, 3)))
-    model.add(Dropout(0.25))
-    model.add(Flatten())
-    model.add(Dense(1024, activation="relu"))
-    model.add(Dropout(0.5))
-    model.add(Dense(128, activation="sigmoid"))
-    # convolutional_net = Sequential()
-    # convolutional_net.add(Conv2D(filters=64, kernel_size=(10, 10),
-    #                              activation='relu',
-    #                              input_shape=input_shape,
-    #                              name='Conv1'))
-    # convolutional_net.add(MaxPool2D())
-    #
-    # convolutional_net.add(Conv2D(filters=128, kernel_size=(7, 7),
-    #                              activation='relu',
-    #                              name='Conv2'))
-    # convolutional_net.add(MaxPool2D())
-    #
-    # convolutional_net.add(Conv2D(filters=128, kernel_size=(4, 4),
-    #                              activation='relu',
-    #                              name='Conv3'))
-    # convolutional_net.add(MaxPool2D())
-    #
-    # # convolutional_net.add(Conv2D(filters=256, kernel_size=(4, 4),
-    # #                              activation='relu',
-    # #                              name='Conv4'))
-    # # convolutional_net.add(MaxPool2D())
-    #
-    # convolutional_net.add(Flatten())
-    # convolutional_net.add(
-    #     Dense(units=4096, activation='relu',
-    #           name='Dense1'))
-    # convolutional_net.add(
-    #     Dense(units=128, activation='sigmoid',
-    #           name='Dense11'))
-    return model
+    # model = Sequential()
+    # model.add(Conv2D(32, (5, 13), activation="relu", input_shape=input_shape))
+    # model.add(MaxPooling2D(pool_size=(2, 3)))
+    # model.add(Conv2D(64, (3, 7), activation="relu", input_shape=input_shape))
+    # model.add(MaxPooling2D(pool_size=(2, 3)))
+    # model.add(Dropout(0.25))
+    # model.add(Flatten())
+    # model.add(Dense(1024, activation="relu"))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(128, activation="sigmoid"))
+    seq = Sequential()
+    seq.add(Convolution2D(96, (11, 11), activation='relu', name='conv1_1', strides=(4, 4), input_shape=input_shape,
+                          kernel_initializer='glorot_uniform', data_format='channels_last'))
+    seq.add(BatchNormalization(epsilon=1e-06, axis=1, momentum=0.9))
+    seq.add(MaxPooling2D((3, 3), strides=(2, 2)))
+    seq.add(ZeroPadding2D((2, 2), ))
+
+    seq.add(Convolution2D(256, (5, 5), activation='relu', name='conv2_1', strides=(1, 1),
+                          kernel_initializer='glorot_uniform'))
+    seq.add(BatchNormalization(epsilon=1e-06, axis=1, momentum=0.9))
+    seq.add(MaxPooling2D((3, 3), strides=(2, 2)))
+    seq.add(Dropout(0.3))  # added extra
+    seq.add(ZeroPadding2D((1, 1)))
+
+    seq.add(Convolution2D(384, (3, 3), activation='relu', name='conv3_1', strides=(1, 1),
+                          kernel_initializer='glorot_uniform'))
+    seq.add(ZeroPadding2D((1, 1)))
+
+    seq.add(Convolution2D(256, (3, 3), activation='relu', name='conv3_2', strides=(1, 1),
+                          kernel_initializer='glorot_uniform'))
+    seq.add(MaxPooling2D((3, 3), strides=(2, 2)))
+    seq.add(Dropout(0.3))  # added extra
+    #    model.add(SpatialPyramidPooling([1, 2, 4]))
+    seq.add(Flatten(name='flatten'))
+    seq.add(Dense(1024, kernel_regularizer=l2(0.0005), activation='relu', kernel_initializer='glorot_uniform'))
+    seq.add(Dropout(0.5))
+
+    seq.add(Dense(128, kernel_regularizer=l2(0.0005), activation='relu',
+                  kernel_initializer='glorot_uniform'))  # softmax changed to relu
+
+    print(seq.summary())
+    return seq
 
 
 def compute_accuracy_roc(predictions, labels):
@@ -120,14 +123,18 @@ def compute_accuracy_roc(predictions, labels):
             max_acc = acc
 
     return max_acc
+def auroc(y_true, y_pred):
+    return tf.py_func(roc_auc_score, (y_true, y_pred), tf.double)
+
+
 
 if __name__ == '__main__':
     path = "D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g\\"
     dir = "D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g"
 
-    input_shape = (62,128,1)
+    input_shape = (155,220,1)
     params = {'dim': input_shape,
-              'batch_size': 200,
+              'batch_size': 128,
               'n_classes': 2,
               'n_channels': 1,
               'shuffle': True}
@@ -147,19 +154,19 @@ if __name__ == '__main__':
     rms = RMSprop(lr=1e-4, rho=0.9, epsilon=1e-08)
     adadelta = Adadelta()
     model.compile(loss=contrastive_loss, optimizer=rms, metrics=['accuracy'])
-    fname = os.path.join('D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g', 'weights_NISDCC.hdf5')
+    fname = os.path.join('D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g', 'model_7epochs_auc.h5')
     checkpointer = ModelCheckpoint(filepath=fname, verbose=1, save_best_only=True)
     history = model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
                         use_multiprocessing=True,
-                        workers=6,  callbacks=[checkpointer], epochs=15 )
+                        workers=6,  callbacks=[checkpointer], epochs=15)
     print(history.history)
     # model.load_weights(fname)
     # print('Loading Best Weights')
     # tr_pred = model.evaluate_generator(generator=training_generator)
     # print("loss is " +str(tr_pred[0])+" Accuracy is "+str(tr_pred[1]))
-    # #tr_pred = model.predict_generator(generator=validation_generator)
-    # # print(tr_pred)
-    # with open('result.txt', 'w') as f:
+    # tr_pred = model.predict_generator(generator=validation_generator)
+    # print(tr_pred)
+    # with open('result.csv', 'w') as f:
     #     f.write(str(tr_pred))
     #     f.close()
