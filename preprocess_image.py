@@ -23,4 +23,5 @@ def preprocess_image(image):
     im_resize = resize_image(im, 128)
     gray_image = cv2.cvtColor(im_resize, cv2.COLOR_BGR2GRAY)
     inv_image = cv2.bitwise_not(gray_image)
-    return inv_image
+    norm_imge = inv_image/255
+    return norm_imge
