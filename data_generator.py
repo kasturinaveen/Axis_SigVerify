@@ -57,12 +57,12 @@ class DataGenerator(keras.utils.Sequence):
             img2_code = data['names_2']
             label = data['Label']
             #print(img1_code)
-            img1 = preprocess_image((self.path + "NISDCC-" + img1_code + "_6g.PNG").values[0])
+            img1 = preprocess_image((self.path + img1_code + ".png").values[0])
             #print(img1)
 
             img1 = prep_image.img_to_array(img1)  # , dim_ordering='tf')
 
-            img2 = preprocess_image((self.path + "NISDCC-" + img2_code + "_6g.PNG").values[0])
+            img2 = preprocess_image((self.path + img2_code + ".png").values[0])
 
             img2 = prep_image.img_to_array(img2)  # , dim_ordering='tf')
             image_pairs += [[img1, img2]]
