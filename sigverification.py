@@ -26,7 +26,7 @@ from keras.optimizers import SGD, RMSprop, Adadelta
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 import random
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
 from keras.layers import Dense, Dropout, Input, Lambda, Flatten, Convolution2D, MaxPooling2D, ZeroPadding2D
 from pairs_generator import pairs_generator
 from data_generator import DataGenerator
@@ -68,13 +68,13 @@ def create_base_network_signet(input_shape):
     seq = Sequential()
     seq.add(Convolution2D(96, (11, 11), activation='relu', name='conv1_1', strides=(4, 4), input_shape=input_shape,
                           kernel_initializer='glorot_uniform', data_format='channels_last'))
-    seq.add(BatchNormalization(epsilon=1e-06, axis=1, momentum=0.9))
+    seq.add(BatchNormalization(epsilon=1e-06, axis=3, momentum=0.9))
     seq.add(MaxPooling2D((3, 3), strides=(2, 2)))
     seq.add(ZeroPadding2D((2, 2), ))
 
     seq.add(Convolution2D(256, (5, 5), activation='relu', name='conv2_1', strides=(1, 1),
                           kernel_initializer='glorot_uniform'))
-    seq.add(BatchNormalization(epsilon=1e-06, axis=1, momentum=0.9))
+    seq.add(BatchNormalization(epsilon=1e-06, axis=3, momentum=0.9))
     seq.add(MaxPooling2D((3, 3), strides=(2, 2)))
     seq.add(Dropout(0.3))  # added extra
     seq.add(ZeroPadding2D((1, 1)))
@@ -129,8 +129,8 @@ def auroc(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    path = "D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g\\"
-    dir = "D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g"
+    path = "D:\\Work\\axis bank\\to_be_named\\NISDCC-offline-all-001-051-6g\\"
+    dir = "D:\\Work\\axis bank\\to_be_named\\NISDCC-offline-all-001-051-6g"
 
     input_shape = (155,220,1)
     params = {'dim': input_shape,
@@ -138,8 +138,9 @@ if __name__ == '__main__':
               'n_classes': 2,
               'n_channels': 1,
               'shuffle': True}
-    pairs, train_IDs, valid_IDs = pairs_generator('D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g\\data.csv')
+    pairs, train_IDs, valid_IDs = pairs_generator('D:\\Work\\axis bank\\to_be_named\\NISDCC-offline-all-001-051-6g\\train.csv')
     partition = {'train':train_IDs,'validation': valid_IDs}
+    print(partition)
     training_generator = DataGenerator(partition['train'], pairs, path, **params)
     #print(training_generator.labels)
     validation_generator = DataGenerator(partition['validation'], pairs, path, **params)
@@ -154,18 +155,19 @@ if __name__ == '__main__':
     rms = RMSprop(lr=1e-4, rho=0.9, epsilon=1e-08)
     adadelta = Adadelta()
     model.compile(loss=contrastive_loss, optimizer=rms, metrics=['accuracy'])
-    fname = os.path.join('D:\\nkasturi122817\\signatureverification\\NISDCC-offline-all-001-051-6g', 'model_7epochs_auc.h5')
+    fname = os.path.join('D:\\Work\\axis bank\\to_be_named\\NISDCC-offline-all-001-051-6g', 'model_10epochs_stride1_acc.h5')
+    # model.load_weights(fname)
     checkpointer = ModelCheckpoint(filepath=fname, verbose=1, save_best_only=True)
     history = model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
                         use_multiprocessing=True,
-                        workers=6,  callbacks=[checkpointer], epochs=15)
+                        workers=6,  callbacks=[checkpointer, EarlyStopping(monitor='val_acc', patience=10)], epochs=12)
     print(history.history)
     # model.load_weights(fname)
     # print('Loading Best Weights')
-    # tr_pred = model.evaluate_generator(generator=training_generator)
+    # tr_pred = model.evaluate_generator(generator=training_generator, use_multiprocessing=False, workers=6)
     # print("loss is " +str(tr_pred[0])+" Accuracy is "+str(tr_pred[1]))
-    # tr_pred = model.predict_generator(generator=validation_generator)
+    # tr_pred = model.predict_generator(generator=training_generator, use_multiprocessing=True, workers=6)
     # print(tr_pred)
     # with open('result.csv', 'w') as f:
     #     f.write(str(tr_pred))
