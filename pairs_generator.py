@@ -6,13 +6,15 @@ def pairs_generator(path):
     pairs = pd.DataFrame(columns=columns)
     ind = 0
     orginal_writers = data[data.writers == data.originals]['names'].tolist()
-    for index, rows in data.iterrows():
-        for i in data[data.writers == rows.originals]['names']:
-            if (rows.names in orginal_writers):
-                pairs = pairs.append({'ID': ind, 'names': rows.names, 'names_2': i, 'Label': 0}, ignore_index=True)
-            else:
-                pairs = pairs.append({'ID': ind, 'names': rows.names, 'names_2': i, 'Label': 1}, ignore_index=True)
-            ind = ind + 1
+    # for index, rows in data.iterrows():
+    #     for i in data[data.writers == rows.originals]['names']:
+    #         if (rows.names in orginal_writers):
+    #             pairs = pairs.append({'ID': ind, 'names': rows.names, 'names_2': i, 'Label': 0}, ignore_index=True)
+    #         else:
+    #             pairs = pairs.append({'ID': ind, 'names': rows.names, 'names_2': i, 'Label': 1}, ignore_index=True)
+    #         ind = ind + 1
+    # pairs.to_csv('pairs')
+    pairs = pd.read_csv('pairs.csv')
     train_IDs, valid_IDs = pairs_splitter(pairs)
     return pairs, train_IDs, valid_IDs
 def pairs_splitter(pairs):
@@ -25,3 +27,4 @@ def pairs_splitter(pairs):
             train_IDs.append(i)
 
     return train_IDs, valid_IDs
+
