@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import cv2
 def show_image(im):
-    print(im.shape)
     plt.imshow(im,cmap='gray')
     plt.show()
 
