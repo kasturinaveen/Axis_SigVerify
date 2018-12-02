@@ -1,3 +1,4 @@
+## Reslt Screen Shots of Hack are uploaded in folder
 # Writer Independent signature verification
 Implemented a method to perform writer independent Signature verification. The model is trained on CEDAR dataset.
 The data set contains 55 Original writers, each one provided 24 signatures. Each writer signature is forged 24 times.
